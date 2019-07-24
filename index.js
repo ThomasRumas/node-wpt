@@ -11,24 +11,43 @@ if(!args['url']) {
     process.exit(1);     
 }
 
-if(!args['mobile']) { 
-    uri = `${config.webpagetest}?url=${args['url']}&${_serialize(config.parameters)}`; 
-} else {
-    uri = `${config.webpagetest}?url=${args['url']}&${_serialize(config.parameters)}&${_serialize(config.mobileParameter)}`;
-}
+_launchTest(uri); 
 
 function _launchTest(uri) {
+    if(!args['mobile']) { 
+        uri = `${config.webpagetest}/runtest.php?url=${args['url']}&${_serialize(config.parameters)}`; 
+    } else {
+        uri = `${config.webpagetest}/runtest.php?url=${args['url']}&${_serialize(config.parameters)}&${_serialize(config.mobileParameter)}`;
+    }
+
     axios.get(uri)
     .then(response => {
         console.info(`You can see your result at this URL : ${response.data.data.userUrl}`);
-        setTimeout(() => {
-            _getJsonResult(response.data.data.testId);
-        }, 5000); 
+        console.info(`Check if test ${response.data.data.testId} is finished`); 
+        _checkTestStatus(response.data.data.testId); 
     })
     .catch(error => {
         console.error(error);
         process.exit(1); 
     });
+}
+
+function _checkTestStatus(prmTestId) {
+    axios.get(`${config.webpagetest}/testStatus.php?f=json&test=${prmTestId}/`)
+    .then(response => {
+        if(response.data.statusCode !== 200) {
+            console.info(`Test ${prmTestId} isn't finished, waiting...`); 
+            setTimeout(() => {
+                _checkTestStatus(prmTestId); 
+            }, 10000); 
+        } else {
+            console.info(`Test ${prmTestId} is done, getting JSON result`); 
+            _getJsonResult(prmTestId); 
+        }
+    })
+    .catch(error => {
+        console.error(error); 
+    })
 }
 
 function _getJsonResult(prmTestId) {
@@ -51,5 +70,3 @@ function _serialize(obj) {
         }
     return str.join("&");
 }
-
-_launchTest(uri); 

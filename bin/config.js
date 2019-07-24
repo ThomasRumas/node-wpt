@@ -1,9 +1,9 @@
 module.exports = {
-    webpagetest: "http://localhost:4000/runtest.php", 
+    webpagetest: "https://webpagetest-server-apkhd5-qa.apps.op.acp.adeo.com/runtest.php", 
     parameters : {
         runs: 3, 
         f: "json", 
-        cmdline: "--proxy-server=\"socks://172.17.0.3:1080\"", 
+        cmdline: "--proxy-server=\"socks://webpagetest-proxy-desktop:8080\"", 
         fvonly: 1
     },
     mobileParameter : {

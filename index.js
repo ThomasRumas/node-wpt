@@ -1,6 +1,9 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const args = require('minimist')(process.argv.slice(2)); 
-var axios = require('axios'); 
-var config = require('./bin/config'); 
+const axios = require('axios'); 
+const config = require('./bin/config'); 
+
 var uri = null; 
 
 if(!args['url']) {
@@ -9,22 +12,38 @@ if(!args['url']) {
 }
 
 if(!args['mobile']) { 
-    uri = `${config.webpagetest}?url=${args['url']}&${serialize(config.parameters)}`; 
+    uri = `${config.webpagetest}?url=${args['url']}&${_serialize(config.parameters)}`; 
 } else {
-    uri = `${config.webpagetest}?url=${args['url']}&${serialize(config.parameters)}&${serialize(config.mobileParameter)}`;
+    uri = `${config.webpagetest}?url=${args['url']}&${_serialize(config.parameters)}&${_serialize(config.mobileParameter)}`;
 }
 
-axios.get(uri)
+function _launchTest(uri) {
+    axios.get(uri)
     .then(response => {
-        console.log(`You can see your result at this URL : ${response.data.data.userUrl}`);
+        console.info(`You can see your result at this URL : ${response.data.data.userUrl}`);
+        setTimeout(() => {
+            _getJsonResult(response.data.data.testId);
+        }, 5000); 
+    })
+    .catch(error => {
+        console.error(error);
+        process.exit(1); 
+    });
+}
+
+function _getJsonResult(prmTestId) {
+    axios.get(`${config.webpagetest}/xmlResult/${prmTestId}`)
+    .then(response => {
+        console.log(response.data); 
         process.exit(0); 
     })
     .catch(error => {
-        console.log(error);
+        console.error(error); 
         process.exit(1); 
-    });
+    })
+}
 
-function serialize(obj) {
+function _serialize(obj) {
     var str = [];
     for (var p in obj)
         if (obj.hasOwnProperty(p)) {
@@ -32,3 +51,5 @@ function serialize(obj) {
         }
     return str.join("&");
 }
+
+_launchTest(uri); 
